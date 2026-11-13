@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Solo Map – interactive guitar fretboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root{--bg:#e8ecef;--card:#fff;--ink:#14202b;--mute:#586674;--line:#cbd3da;--acc:#0e7c75;--root:#f2a900;--chord:#2bbfae;--scale:#e9e3d3;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10161b;--card:#19222a;--ink:#e6ecf1;--mute:#94a2af;--line:#2a3641;--acc:#4fd1c5;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10161b;--card:#19222a;--ink:#e6ecf1;--mute:#94a2af;--line:#2a3641;--acc:#4fd1c5;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Source Serif 4",Georgia,serif}
+main{max-width:1000px;margin:0 auto;padding:28px 16px 60px}
+h1,h2,h3,button,label,select,th{font-family:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif}
+h1{font-size:clamp(2.2rem,6vw,3.4rem);line-height:1.05;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:1.5rem;margin:1.6em 0 .4em}
+h3{font-size:1.1rem;margin:1.3em 0 .2em}
+.lede{font-size:1.15rem;color:var(--mute);max-width:60ch;margin:0 0 22px}
+.panel{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mute);gap:4px;font-weight:500}
+select{font-size:1rem;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);min-width:110px;max-width:100%}
+button{font-size:.95rem;font-weight:500;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:9px 14px}
+button:hover{border-color:var(--acc)}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.seg{display:flex}.seg button{border-radius:0}.seg button:first-child{border-radius:8px 0 0 8px}.seg button:last-child{border-radius:0 8px 8px 0}
+button[aria-pressed="true"],button[aria-selected="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) button[aria-pressed="true"],:root:not([data-theme="light"]) button[aria-selected="true"]{color:#06201d}}
+.go{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.9rem;color:var(--mute);margin:14px 2px 8px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:6px;border:2px solid transparent}
+.board{overflow-x:auto;border-radius:14px;background:#1d130d;border:1px solid #000}
+.board svg{display:block;min-width:780px;width:100%;height:auto}
+.board g[data-i]{cursor:pointer}
+.n circle{fill:var(--scale)}.r circle{fill:var(--root)}.c circle{fill:var(--chord)}.cr circle{stroke:#fff;stroke-width:2.5}.rc circle{stroke:var(--chord);stroke-width:3.5}
+.o circle{fill:none;stroke:var(--chord);stroke-width:2;stroke-dasharray:3 3}.o text{fill:var(--chord)}
+.x{opacity:.2}
+.board text{font:600 10.5px "Bricolage Grotesque",system-ui,sans-serif;text-anchor:middle;fill:#1b1510}
+.board text.fn{fill:#a89d8a;font-weight:500;font-size:11px}
+#read{margin:12px 2px 0;color:var(--mute);font-size:.98rem}
+#read b{color:var(--ink)}
+nav[role=tablist]{display:flex;gap:8px;flex-wrap:wrap;margin-top:34px}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 22px 24px;margin-top:12px}
+.sec p,.sec li{max-width:68ch}
+.sec ol,.sec ul{padding-left:1.2em}
+table{border-collapse:collapse;width:100%;font-size:.92rem;display:block;overflow-x:auto}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+td:first-child{white-space:nowrap;font-weight:600}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:var(--bg);padding:1px 5px;border-radius:4px}
+.ex{border-top:1px solid var(--line);padding:16px 0 4px}
+.ex:first-of-type{border-top:0}
+.ex h3{margin-top:0}
+.ex p{margin:.4em 0 .7em}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Solo Map</h1>
+<p class="lede">Choose a key and a scale to see where its notes sit on the neck. Add a chord to light up the notes worth landing on. Click any dot to hear it.</p>
+
+<section class="panel" aria-label="Controls">
+  <label>Key<select id="key"></select></label>
+  <label>Scale<select id="scale"></select></label>
+  <label>Position system<select id="sys"><option value="box">Boxes by scale degree</option><option value="caged">CAGED shapes</option></select></label>
+  <label>Position<select id="pos"></select></label>
+  <label>Target chord<select id="chord"></select></label>
+  <div class="seg" role="group" aria-label="Dot labels"><button data-l="name" aria-pressed="true">Notes</button><button data-l="deg" aria-pressed="false">Intervals</button></div>
+  <button id="rel" title="Switch to the relative major or minor scale">Relative</button>
+  <button id="play" class="go">Play scale</button>
+</section>
+
+<div class="legend">
+  <span><i style="background:var(--root)"></i>Root of the key</span>
+  <span><i style="background:var(--chord)"></i>Chord tone</span>
+  <span><i style="background:var(--scale)"></i>Other scale note</span>
+  <span><i style="border-color:var(--chord);border-style:dashed"></i>Chord tone outside the scale</span>
+  <span><i style="background:var(--scale);opacity:.25"></i>Other positions</span>
+</div>
+
+<div class="board" tabindex="0" role="group" aria-label="Guitar fretboard, frets 0 to 15, standard tuning"><svg id="fb" viewBox="0 0 932 205" xmlns="http://www.w3.org/2000/svg"></svg></div>
+<p id="read"></p>
+
+<nav role="tablist" aria-label="Guides">
+  <button role="tab" aria-selected="true" data-t="how">How to use it</button>
+  <button role="tab" aria-selected="false" data-t="theory">Theory</button>
+  <button role="tab" aria-selected="false" data-t="pc">Pentatonics and CAGED</button>
+  <button role="tab" aria-selected="false" data-t="ex">Examples</button>
+</nav>
+
+<section class="sec" id="how" role="tabpanel">
+<h2>How to use the map</h2>
+<ol>
+<li><b>Set the key.</b> This is the root of the song, usually the chord the progression starts and ends on. If the song is in A minor, choose A.</li>
+<li><b>Choose a scale that matches the mood.</b> Minor pentatonic is the safe default for rock and blues. Major pentatonic suits country and bright pop. The full major and natural minor scales add the notes pentatonic leaves out. Use Dorian for minor with a lift, Mixolydian for major with a bluesy, rock edge.</li>
+<li><b>Pick one position.</b> “All positions” shows the whole neck, which is useful for seeing the pattern but too much to play from. Choose a single position and the dots from the other positions fade into the background. Stay in one position until you can play it without looking, then move to the next one up.</li>
+<li><b>Choose a target chord.</b> The teal dots are the three notes of that chord. When the band changes chords, switch this setting and aim your phrases at the teal dots, especially at the start of the bar. This is what makes a solo sound like it belongs to the song.</li>
+<li><b>Switch between Notes and Intervals.</b> Notes shows letter names. Intervals shows each dot’s distance from the root (1, b3, 5…), which is how the pattern stays the same in every key.</li>
+<li><b>Listen.</b> Click a dot to hear it, or press Play scale to hear the visible notes climb one octave from the root.</li>
+</ol>
+<h3>A simple practice routine</h3>
+<ul>
+<li>Play the position slowly, up and down, saying each note name or interval aloud.</li>
+<li>Play only the root notes, then only the chord tones, so you can find them without hunting.</li>
+<li>Make up a three-note phrase and move it to every string in the position.</li>
+<li>Put on a backing track in the same key. Start each phrase on a chord tone and end it on one.</li>
+<li>Change the key and play the same shape. The pattern moves with the root, so the fingering stays the same.</li>
+</ul>
+<p>The fretboard shows frets 0 to 15. Every pattern repeats an octave higher at fret 12, so a position near the nut also appears around the 12th fret.</p>
+</section>
+
+<section class="sec" id="theory" role="tabpanel" hidden>
+<h2>The theory behind it</h2>
+<h3>Notes, semitones and intervals</h3>
+<p>Western music has 12 notes, and each fret is one semitone (half step) apart. After 12 frets you are back at the same note an octave higher. An <i>interval</i> is the distance from the root counted in semitones: 3 semitones is a minor third (b3), 4 is a major third (3), 7 is a perfect fifth (5), and so on. Every scale is just a list of intervals from a root, so once you know the formula you can build the scale in any key.</p>
+<h3>Scale formulas</h3>
+<table>
+<tr><th>Scale</th><th>Intervals</th><th>Sound and use</th></tr>
+<tr><td>Minor pentatonic</td><td>1 b3 4 5 b7</td><td>The rock and blues workhorse. Five notes, no awkward clashes.</td></tr>
+<tr><td>Major pentatonic</td><td>1 2 3 5 6</td><td>Sweet and open. Country, pop, gospel, classic rock leads.</td></tr>
+<tr><td>Blues</td><td>1 b3 4 b5 5 b7</td><td>Minor pentatonic plus the “blue note” (b5), used as a passing tone.</td></tr>
+<tr><td>Natural minor</td><td>1 2 b3 4 5 b6 b7</td><td>Dark, melodic. Fits most minor-key songs.</td></tr>
+<tr><td>Major</td><td>1 2 3 4 5 6 7</td><td>Bright and resolved. The basis of most chord theory.</td></tr>
+<tr><td>Dorian</td><td>1 2 b3 4 5 6 b7</td><td>Minor with a natural 6th. Funky, jazzy and Latin rock.</td></tr>
+<tr><td>Mixolydian</td><td>1 2 3 4 5 6 b7</td><td>Major with a flat 7th. Rock, blues and dominant 7th chords.</td></tr>
+</table>
+<h3>Why pentatonic scales are so forgiving</h3>
+<p>Pentatonic scales leave out the two notes that most often clash with chords: the 4th and 7th of the major scale, or the 2nd and b6 of the minor. With fewer risky notes, almost anything you play sounds acceptable, and that is why beginners start there.</p>
+<h3>Chord tones are your targets</h3>
+<p>A triad is the root, third and fifth of a chord. These are the strongest notes against that chord. The <b>third</b> tells the listener whether the chord is major or minor, so landing on it makes your line follow the harmony. Scale notes that are not chord tones sound like tension, which is useful on weak beats and as passing notes. Resolve them to a chord tone for the satisfying “arrival”.</p>
+<h3>Positions and how they connect</h3>
+<p>The neck contains the same scale in several overlapping shapes. A pentatonic scale has five positions (the “boxes”), and a seven-note scale has seven. Each one here starts from one scale note on the low E string. They link end to end: the top of one position is the bottom of the next, so sliding up or down a string takes you between them. Learning them one at a time, and then connecting two neighbours, opens up the whole neck.</p>
+<h3>The blue note</h3>
+<p>The b5 in the blues scale sits a semitone away from both the 4th and the 5th. Held for a long time it sounds wrong, but as a quick passing note, a slide or half of a bend, it gives the blues its tension. Play 4, b5, 5 in a row and you hear it immediately.</p>
+<h3>Minor over major, and the other way round</h3>
+<p>Blues players often use a minor pentatonic over a major (dominant 7th) chord. The b3 against the chord’s major 3rd creates the characteristic bluesy friction. Rock players commonly do the same. For a sweeter sound, switch to major pentatonic built on the same root.</p>
+<h3>Choosing a scale for the chords</h3>
+<ul>
+<li>Song in a minor key: minor pentatonic or natural minor on the root chord.</li>
+<li>Song in a major key: major pentatonic or major scale on the root chord.</li>
+<li>A static minor vamp with a major IV chord (like Dm7 to G7): Dorian.</li>
+<li>A major vamp with a flat VII chord (like E to D): Mixolydian.</li>
+<li>12-bar blues: minor pentatonic or blues scale from the key’s root throughout, shifting the target chord as the changes move.</li>
+</ul>
+<h3>Phrasing matters more than notes</h3>
+<p>Leave gaps. Repeat a short idea, then vary it. Ask, then answer. Bend or slide into the important notes, and end phrases on a chord tone with a longer note. A solo of five well-placed notes will beat a run of fifty with no shape.</p>
+</section>
+
+<section class="sec" id="pc" role="tabpanel" hidden>
+<h2>Pentatonic boxes and CAGED shapes</h2>
+<h3>Minor and major pentatonic share their notes</h3>
+<p>A minor pentatonic is A C D E G. C major pentatonic is C D E G A. These are the same five notes with a different home note. Pick A minor pentatonic, then press <b>Relative</b>: the key changes to C and the scale to major pentatonic, but the dots stay where they are. This is why a minor box sounds sad when you resolve to the minor root and happy when you resolve to the relative major root. Use the minor pentatonic over the minor chord, and the major pentatonic over the major chord three semitones up.</p>
+<h3>The five boxes</h3>
+<p>Each pentatonic scale has five shapes that tile the neck. The same five shapes cover both scales. Only the numbering and the root note change.</p>
+<table>
+<tr><th>Minor pentatonic box</th><th>CAGED shape</th><th>Major pentatonic position</th></tr>
+<tr><td>Box 1</td><td>G shape</td><td>Position 5</td></tr>
+<tr><td>Box 2</td><td>E shape</td><td>Position 1</td></tr>
+<tr><td>Box 3</td><td>D shape</td><td>Position 2</td></tr>
+<tr><td>Box 4</td><td>C shape</td><td>Position 3</td></tr>
+<tr><td>Box 5</td><td>A shape</td><td>Position 4</td></tr>
+</table>
+<p>In Boxes mode, each entry in the Position list shows the nearest CAGED shape.</p>
+<h3>What CAGED is</h3>
+<p>CAGED is named after five open chords: C, A, G, E and D. Each of them can be moved up the neck with a barre and still be the same chord, and every chord shape has a scale shape wrapped around it. Joined end to end in the order C, A, G, E, D, they cover the whole neck for a given key and start again at the 12th fret. Learn the five shapes and you can find the chord, its arpeggio and the scale anywhere.</p>
+<h3>How to use CAGED mode</h3>
+<ol>
+<li>Set <b>Position system</b> to CAGED shapes and choose a key and a scale.</li>
+<li>Pick one shape. The map shows the scale notes inside that shape, and the chord tones of the key’s home chord in teal. Those teal dots form the chord shape.</li>
+<li>Play the chord tones first, then the full scale around them.</li>
+<li>Move to the next shape up. Their ranges overlap by a fret or two, so you can slide from one to the other.</li>
+<li>Press Relative to see the same shapes as the other pentatonic, with the same fret ranges.</li>
+</ol>
+<h3>CAGED in minor keys and modes</h3>
+<p>CAGED shapes come from the parent major scale. A minor, Dorian on D and Mixolydian on E use the shapes of C major, C major and A major. The map works this out for you and says which major key the shapes follow. In minor keys, the teal dots show the minor tonic chord, so you still see the chord tones inside the shape.</p>
+<h3>Practice ideas</h3>
+<ul>
+<li>Choose one chord and play it in all five shapes, from low to high.</li>
+<li>Play a shape’s scale, then only its chord tones, then a short melody that ends on the root.</li>
+<li>Connect two neighbours by playing the scale up one string pair in the first shape and finishing the line in the second.</li>
+</ul>
+</section>
+
+<section class="sec" id="ex" role="tabpanel" hidden>
+<h2>Worked examples</h2>
+<p>Each button sets the map for you. Then play the steps in order.</p>
+<div id="exlist"></div>
+</section>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const B=[40,45,50,55,59,64],T=B.map(m=>m%12);
+const SH=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'],FL=['C','D♭','D','E♭','E','F','G♭','G','A♭','A','B♭','B'];
+const INT=['1','b2','2','b3','3','4','b5','5','b6','6','b7','7'];
+const SC={
+ minpent:{n:'Minor pentatonic',iv:[0,3,5,7,10],m:'m'},
+ majpent:{n:'Major pentatonic',iv:[0,2,4,7,9],m:'M'},
+ blues:{n:'Blues',iv:[0,3,5,6,7,10],m:'m'},
+ nminor:{n:'Natural minor',iv:[0,2,3,5,7,8,10],m:'m'},
+ major:{n:'Major',iv:[0,2,4,5,7,9,11],m:'M'},
+ dorian:{n:'Dorian',iv:[0,2,3,5,7,9,10],m:'m'},
+ mixo:{n:'Mixolydian',iv:[0,2,4,5,7,9,10],m:'M'}
+};
+const S={key:9,sc:'minpent',pos:0,chord:-1,lab:'name',sys:'box'};
+const PO={minpent:3,majpent:0,blues:3,nminor:3,major:0,dorian:10,mixo:5};
+const CG=['C','A','G','E','D'];
+function cagedWin(i){const P=(S.key+PO[S.sc])%12,r=(P-4+12)%12,c=(P-9+12)%12,d=(P-2+12)%12;return [[c-3,c+1],[c-1,c+3],[r-4,r],[r-1,r+3],[d-1,d+4]][i]}
+function nearShape(s){let b=0,bd=99;CG.forEach((n,i)=>{const x=(((cagedWin(i)[0]-s)%12)+12)%12,d=Math.min(x,12-x);if(d<bd){bd=d;b=i}});return CG[b]}
+const minor=()=>SC[S.sc].m==='m';
+const flat=()=>[1,3,5,8,10].includes(S.key)||(minor()&&[0,2,7].includes(S.key));
+const nm=p=>(flat()?FL:SH)[((p%12)+12)%12];
+const chordOpts=()=>minor()
+ ?[[0,'i','m'],[3,'bIII','M'],[5,'iv','m'],[7,'v','m'],[7,'V','M'],[8,'bVI','M'],[10,'bVII','M']]
+ :[[0,'I','M'],[2,'ii','m'],[4,'iii','m'],[5,'IV','M'],[7,'V','M'],[9,'vi','m'],[10,'bVII','M']];
+let VIS=[];
+
+function opts(el,list,val){el.innerHTML=list.map(([v,t])=>`<option value="${v}">${t}</option>`).join('');el.value=val}
+function buildKey(){opts($('key'),SH.map((n,i)=>[i,i%12&&[1,3,6,8,10].includes(i)?n+'/'+FL[i]:n]),S.key)}
+function buildPos(){const iv=SC[S.sc].iv;
+ if(S.sys==='caged')opts($('pos'),[[0,'All shapes'],...CG.map((n,i)=>{const [s,e]=cagedWin(i),s0=((s%12)+12)%12;return [i+1,`${n} shape (frets ${s0}–${s0+e-s})`]})],S.pos);
+ else opts($('pos'),[[0,'All positions'],...iv.map((x,k)=>{const a=(((S.key-4+12)%12)+x)%12;return [k+1,`Position ${k+1} (from ${INT[x]}), ${nearShape(a-1)} shape`]})],S.pos)}
+function buildChord(){const c=chordOpts();opts($('chord'),[[-1,'None'],...c.map((x,i)=>[i,`${x[1]} – ${nm(S.key+x[0])}${x[2]=='m'?'m':''}`])],S.chord)}
+
+function draw(){
+ const sc=SC[S.sc],iv=sc.iv,k=S.key,W=58,N=52,X=f=>f?N+(f-.5)*W:26,Y=i=>24+(5-i)*30;
+ const inS=p=>iv.includes((p-k+12)%12);
+ let win=null,ws=0,we=0;const P=(k+PO[S.sc])%12;
+ if(S.pos>0){
+  if(S.sys==='caged'){[ws,we]=cagedWin(S.pos-1)}
+  else{const a=(((k-4+12)%12)+iv[S.pos-1])%12;ws=a-1;we=a+3}
+  win=f=>[-12,0,12].some(m=>f>=ws+m&&f<=we+m);
+ }
+ const sel=S.chord>=0?chordOpts()[S.chord]:null;
+ const cd=sel||(S.sys==='caged'?chordOpts()[0]:null);
+ let cp=[],cr=-1;
+ if(cd){cr=(k+cd[0])%12;cp=[cr,(cr+(cd[2]=='m'?3:4))%12,(cr+7)%12]}
+ let s=`<rect x="${N}" y="6" width="${15*W+12}" height="180" rx="3" fill="#3a2418"/><rect x="${N-5}" y="6" width="6" height="180" fill="#e7e0cf"/>`;
+ for(let f=1;f<=15;f++)s+=`<rect x="${N+f*W-1}" y="6" width="2.2" height="180" fill="#b9b3a4"/>`;
+ [3,5,7,9,15].forEach(f=>s+=`<circle cx="${X(f)}" cy="99" r="5" fill="#5a3d2b"/>`);
+ s+=`<circle cx="${X(12)}" cy="69" r="5" fill="#5a3d2b"/><circle cx="${X(12)}" cy="129" r="5" fill="#5a3d2b"/>`;
+ for(let i=0;i<6;i++)s+=`<line x1="${N-5}" x2="${N+15*W+12}" y1="${Y(i)}" y2="${Y(i)}" stroke="#c9c4b8" stroke-width="${(2.6-i*.35).toFixed(2)}"/>`;
+ [0,1,2,3,5,7,9,12,15].forEach(f=>{if(f)s+=`<text class="fn" x="${X(f)}" y="201">${f}</text>`});
+ s+=`<text class="fn" x="26" y="201">0</text>`;
+ VIS=[];
+ for(let i=0;i<6;i++)for(let f=0;f<=15;f++){
+  const p=(T[i]+f)%12,ins=inS(p),inc=cp.includes(p);
+  if(!ins&&!inc)continue;
+  const fade=win&&!win(f);
+  let cl=!ins?'o':p===k?(inc?'r rc':'r'):inc?'c':'n';
+  if(inc&&p===cr)cl+=' cr';
+  if(fade)cl+=' x';
+  const lab=S.lab==='name'?nm(p):INT[(p-k+12)%12];
+  s+=`<g class="${cl}" data-i="${i}" data-f="${f}"><circle cx="${X(f)}" cy="${Y(i)}" r="11.5"/><text x="${X(f)}" y="${Y(i)+3.8}">${lab}</text></g>`;
+  if(ins&&!fade)VIS.push({mid:B[i]+f,root:p===k});
+ }
+ $('fb').innerHTML=s;
+ let r=`<b>${nm(k)} ${sc.n}</b>: ${iv.map(x=>nm(k+x)).join(' ')}.`;
+ if(S.pos>0){const rg=[-12,0,12].map(m=>[Math.max(ws+m,0),Math.min(we+m,15)]).filter(([x,y])=>y>=x).map(([x,y])=>x+'–'+y);
+  r+=S.sys==='caged'?` ${CG[S.pos-1]} shape: frets ${rg.join(' and ')}.`:` Position ${S.pos} is around frets ${rg.join(' and ')} (${nearShape(ws)} shape).`}
+ if(S.sys==='caged')r+=` Shapes follow ${nm(P)} major, the parent of this scale.`;
+ if(cd)r+=` <b>${nm(cr)}${cd[2]=='m'?'m':''}</b> chord tones: ${cp.map(nm).join(' ')}. Land on these when the chord arrives.`;
+ $('read').innerHTML=r;
+}
+
+let AC;
+function pluck(mid,t=0){
+ AC=AC||new(window.AudioContext||window.webkitAudioContext)();
+ if(AC.state==='suspended')AC.resume();
+ const o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter(),s=AC.currentTime+t;
+ o.type='triangle';o.frequency.value=440*2**((mid-69)/12);f.type='lowpass';f.frequency.value=2400;
+ g.gain.setValueAtTime(0,s);g.gain.linearRampToValueAtTime(.35,s+.01);g.gain.exponentialRampToValueAtTime(.001,s+1.4);
+ o.connect(f);f.connect(g);g.connect(AC.destination);o.start(s);o.stop(s+1.5);
+}
+function playScale(){
+ if(!VIS.length)return;
+ const roots=VIS.filter(v=>v.root).map(v=>v.mid),low=roots.length?Math.min(...roots):Math.min(...VIS.map(v=>v.mid));
+ [...new Set(VIS.map(v=>v.mid).filter(m=>m>=low&&m<=low+12))].sort((x,y)=>x-y).forEach((m,j)=>pluck(m,j*.3));
+}
+
+function setScale(id){S.sc=id;S.pos=0;S.chord=-1;buildPos();buildChord();draw()}
+$('scale').innerHTML=Object.entries(SC).map(([v,o])=>`<option value="${v}">${o.n}</option>`).join('');
+$('scale').value=S.sc;
+buildKey();buildPos();buildChord();draw();
+$('key').onchange=e=>{S.key=+e.target.value;buildPos();buildChord();draw()};
+$('scale').onchange=e=>setScale(e.target.value);
+$('pos').onchange=e=>{S.pos=+e.target.value;draw()};
+$('chord').onchange=e=>{S.chord=+e.target.value;draw()};
+$('play').onclick=playScale;
+$('sys').onchange=e=>{S.sys=e.target.value;S.pos=0;buildPos();draw()};
+const REL={minpent:['majpent',3],majpent:['minpent',9],blues:['majpent',3],nminor:['major',3],major:['nminor',9]};
+$('rel').onclick=()=>{const r=REL[S.sc];if(!r)return;
+ let s=null;if(S.pos>0&&S.sys==='box')s=(((S.key-4+12)%12)+SC[S.sc].iv[S.pos-1])%12-1;
+ S.key=(S.key+r[1])%12;S.sc=r[0];S.chord=-1;buildKey();$('scale').value=S.sc;
+ if(s!==null){let b=1,bd=99;SC[S.sc].iv.forEach((x,k)=>{const a=(((S.key-4+12)%12)+x)%12,q=(((a-1-s)%12)+12)%12,d=Math.min(q,12-q);if(d<bd){bd=d;b=k+1}});S.pos=b}
+ buildPos();buildChord();draw()};
+document.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{S.lab=b.dataset.l;document.querySelectorAll('[data-l]').forEach(x=>x.setAttribute('aria-pressed',x===b));draw()});
+$('fb').addEventListener('click',e=>{const g=e.target.closest('g[data-i]');if(g)pluck(B[+g.dataset.i]+ +g.dataset.f)});
+
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('[data-t]').forEach(x=>{const on=x===b;x.setAttribute('aria-selected',on);$(x.dataset.t).hidden=!on});
+});
+
+const EX=[
+ {t:'12-bar blues in A',key:9,sc:'blues',pos:1,chord:'i',
+  p:'Play over A7, D7 and E7. Start with the A blues scale in position 1.',
+  st:['Slide between the root (A) on the low E string and the b3 (C) a few frets above it. This is the core blues move.','Hit the b5 (E♭) only in passing, between D and E. Never end a phrase on it.','When the chord goes to D7, change the target chord to iv and aim for D and A. On E7, aim for E and B.','End each chorus on the root A with a long note.']},
+ {t:'Rock lead in E minor',key:4,sc:'minpent',pos:1,chord:'i',
+  p:'Position 1 of E minor pentatonic starts at the open strings and repeats at the 12th fret, which is where most rock leads happen.',
+  st:['Play E, G, A, B, D up and down one string at a time, then across the strings.','Target chord tones E, G and B to make your phrases feel stable.','Bend the D up a tone to E, then the G up a tone to A. These two bends are the vocabulary of rock lead guitar.','Move to position 2 and connect it by sliding on the B string.']},
+ {t:'Country or pop in G',key:7,sc:'majpent',pos:1,chord:'I',
+  p:'Over G, C and D (or G, Em, C, D), the G major pentatonic gives a bright, singing sound.',
+  st:['Start on the root G and walk up the scale to E, then back.','Slide into the major 3rd (B) from a semitone below, which is a typical country move.','Change the target chord to IV (C) and aim for E, which is the 3rd of C, and G, which is its 5th.','Resolve each phrase to G or B on the G chord.']},
+ {t:'Sad ballad in A minor',key:9,sc:'nminor',pos:0,chord:'bVI',
+  p:'Natural minor adds the 2nd (B) and the b6 (F) to the pentatonic notes. Over Am, F, G, Am, you get more melody.',
+  st:['Pick any one position and play it first. Use the “All positions” view only to see the pattern.','When the chord is F, switch the target to bVI. Hold F, A or C for the bar.','On G, switch to bVII (G, B, D) and move to the nearest of those.','Finish on A over the final Am chord.']},
+ {t:'Dorian groove in D',key:2,sc:'dorian',pos:1,chord:'i',
+  p:'Over a Dm7 vamp, or Dm7 to G7, Dorian’s natural 6th (B) gives a minor sound that is brighter than the natural minor.',
+  st:['Play D minor pentatonic first, then add the 2nd (E) and the 6th (B).','Emphasize the B, since it is the note that makes this Dorian rather than plain minor.','On the G7, aim for G, B and D. The B is also the Dorian note over Dm, which ties the two chords together.']},
+ {t:'Mixolydian rock in E',key:4,sc:'mixo',pos:2,chord:'bVII',
+  p:'Over E, D and A (I, bVII, IV), Mixolydian provides every note you need.',
+  st:['Use E major pentatonic notes plus the b7 (D) and the 4th (A).','When the chord moves to D, switch the target to bVII and play the D, F♯ and A.','Back to E: aim for E, G♯ and B. The G♯ is the major third that makes this sound major.']}
+,
+ {t:'CAGED around the neck in C',key:0,sc:'major',sys:'caged',pos:1,chord:'I',
+  p:'C major in CAGED mode. Start with the C shape at the nut, then step through the A, G, E and D shapes with the Position list.',
+  st:['Play the C shape’s teal notes (C, E, G) and then the full scale around them. This is the open-position scale.','Choose the A shape. It sits a couple of frets higher and overlaps the C shape, so find the notes the two shapes share.','Continue through G, E and D. Each one begins where the previous one ends.','After D, the C shape returns at the 12th fret, one octave higher.']},
+ {t:'Two moods, one set of notes',key:9,sc:'minpent',sys:'box',pos:1,chord:'i',
+  p:'A minor pentatonic box 1 and C major pentatonic position 5 are the same shape on the neck.',
+  st:['Play box 1 and resolve to the A, in the minor sound.','Press Relative on the map. The key becomes C and the scale becomes major pentatonic, but the notes stay where they are.','Play the same shape and resolve to C instead. The sound turns major.','Use this when a song moves between a minor chord and its relative major, such as Am and C.']}
+];
+$('exlist').innerHTML=EX.map((e,i)=>`<div class="ex"><h3>${e.t}</h3><p>${e.p}</p><ol>${e.st.map(x=>`<li>${x}</li>`).join('')}</ol><button data-ex="${i}">Show on the map</button></div>`).join('');
+document.querySelectorAll('[data-ex]').forEach(b=>b.onclick=()=>{
+ const e=EX[b.dataset.ex];S.key=e.key;S.sc=e.sc;S.sys=e.sys||'box';$('sys').value=S.sys;buildKey();$('scale').value=e.sc;S.pos=e.pos;buildPos();
+ S.chord=chordOpts().findIndex(c=>c[1]===e.chord);buildChord();draw();
+ $('fb').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'center'});
+});
+</script>
+</body>
+</html>
